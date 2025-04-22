@@ -1,0 +1,11 @@
+pandas
+numpy
+networkx
+scikit-learn
+tensorflow
+# or torch
+geopandas
+mesa
+pysd
+dash
+plotly 
