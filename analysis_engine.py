@@ -86,34 +86,60 @@ class DigitalAnalysisEngine:
         if self.results.empty:
             print("No results to visualize.")
             return
+        
+        # Apply a template for consistent styling
+        plot_template = "plotly_white"
 
-        # Example 1: Plotting the composite maturity index
+        # Example 1: Plotting the composite maturity index - Enhanced Styling
         if 'composite_digital_maturity' in self.results.columns:
             fig1 = go.Figure()
-            fig1.add_trace(go.Scatter(x=self.results.index, y=self.results['composite_digital_maturity'],
-                                      mode='lines+markers', name='Composite Maturity'))
-            fig1.update_layout(title=f'Composite Digital Maturity Index ({self.scenario_name})',
-                               xaxis_title='Year', yaxis_title='Index Value (Normalized)')
+            fig1.add_trace(go.Scatter(
+                x=self.results.index, 
+                y=self.results['composite_digital_maturity'],
+                mode='lines+markers', 
+                name='Composite Maturity', 
+                line=dict(color='#1a5276', width=3), # Dark blue line
+                marker=dict(color='#1a5276', size=7, symbol='circle'),
+                hovertemplate='Year: %{x}<br>Index: %{y:.3f}<extra></extra>' # Custom hover
+            ))
+            fig1.update_layout(
+                title=dict(text=f'Composite Digital Maturity Index ({self.scenario_name})', font=dict(size=18)),
+                xaxis_title='Simulation Year', 
+                yaxis_title='Index Value (Normalized)',
+                template=plot_template,
+                hovermode='x unified',
+                yaxis_range=[0, 1.05], # Set Y-axis range 0 to 1.05
+                xaxis=dict(showgrid=True, gridwidth=1, gridcolor='#e9ecef'), # Add light grid
+                yaxis=dict(showgrid=True, gridwidth=1, gridcolor='#e9ecef'), # Add light grid
+                margin=dict(t=50, b=50, l=50, r=20) # Further reduced margins
+            )
             self.figures['composite_maturity'] = fig1
-            print("Generated composite maturity plot.")
+            print("Generated composite maturity plot with enhanced styling.")
 
-        # Example 2: Plotting selected key indicators
-        key_indicators_to_plot = [
-            'infra_infra_metric', 'economy_econ_metric', 'innovation_startup_count', 'integration_it_exports'
+        # Example 2: Plotting selected key indicators (NORMALIZED)
+        normalized_indicators_to_plot = [
+            'infra_infra_metric_norm', 
+            'economy_econ_metric_norm', 
+            'innovation_startup_count_norm', 
+            'integration_it_exports_norm'
+        ]
+        subplot_titles = [
+             'Infrastructure (Norm)', 'Economy (Norm)', 'Startups (Norm)', 'IT Exports (Norm)'
         ]
         
-        num_indicators = len(key_indicators_to_plot)
+        num_indicators = len(normalized_indicators_to_plot)
         if num_indicators > 0:
-             # Determine subplot layout (e.g., 2 columns)
              rows = (num_indicators + 1) // 2
-             fig2 = make_subplots(rows=rows, cols=2, subplot_titles=key_indicators_to_plot)
+             fig2 = make_subplots(rows=rows, cols=2, subplot_titles=subplot_titles)
              current_row = 1
              current_col = 1
-             for indicator in key_indicators_to_plot:
+             plot_added = False
+             for i, indicator in enumerate(normalized_indicators_to_plot):
                  if indicator in self.results.columns:
                      fig2.add_trace(go.Scatter(x=self.results.index, y=self.results[indicator], 
-                                                mode='lines', name=indicator.split('_', 1)[-1]), 
+                                                mode='lines', name=subplot_titles[i]), 
                                     row=current_row, col=current_col)
+                     plot_added = True
                      # Update column/row counters
                      current_col += 1
                      if current_col > 2:
@@ -122,9 +148,19 @@ class DigitalAnalysisEngine:
                  else:
                       print(f"Warning: Indicator {indicator} not found for plotting.")
 
-             fig2.update_layout(title=f'Selected Key Indicators Evolution ({self.scenario_name})', showlegend=False, height=300*rows)
-             self.figures['key_indicators'] = fig2
-             print("Generated key indicators subplot.")
+             if plot_added:
+                fig2.update_layout(
+                    title=f'Selected Key Indicators Evolution (Normalized) ({self.scenario_name})',
+                    showlegend=False, 
+                    template=plot_template,
+                    height=250*rows + 100, # Adjust height dynamically
+                    margin=dict(t=100, b=50, l=50, r=30) # Add margin
+                )
+                fig2.update_yaxes(title_text="Normalized Value (0-1)", row=1, col=1) # Add Y-axis label example
+                self.figures['key_normalized_indicators'] = fig2
+                print("Generated key normalized indicators subplot.")
+             else:
+                 print("No key normalized indicators found to plot.")
 
         # --- Add more visualizations based on the detailed dashboard list in the prompt ---
         # Requires selecting appropriate columns and chart types (lines, bars, heatmaps etc.)
@@ -143,80 +179,127 @@ class DigitalAnalysisEngine:
         os.makedirs(output_dir, exist_ok=True)
         filepath = os.path.join(output_dir, filename)
 
-        # Enhanced CSS
+        # Clearer & Nicer CSS - Updated Styling
         css = """
 <style>
-  body { 
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-    line-height: 1.6; 
-    margin: 20px; 
-    background-color: #f9f9f9; 
-    color: #333;
+  @import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap');
+
+  body {
+    font-family: 'Lato', sans-serif;
+    line-height: 1.75;
+    margin: 0;
+    padding: 0;
+    background-color: #f8f9fa; /* Lighter background */
+    color: #495057; /* Softer black */
+    font-weight: 300;
   }
-  .container { 
-    max-width: 1000px; 
-    margin: auto; 
-    background: #fff; 
-    padding: 25px; 
-    box-shadow: 0 0 15px rgba(0,0,0,0.1);
+  .container {
+    max-width: 1200px;
+    margin: 40px auto;
+    background: #ffffff;
+    padding: 30px 50px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.07);
     border-radius: 8px;
   }
-  h1, h2, h3 { 
-    color: #0056b3; /* A blue shade */
-    border-bottom: 2px solid #eee;
-    padding-bottom: 5px;
-    margin-top: 30px;
+  h1, h2, h3 {
+    color: #1a5276; /* Darker shade of blue */
+    border-bottom: 2px solid #aed6f1; /* Lighter blue */
+    padding-bottom: 10px;
+    margin-top: 45px;
+    margin-bottom: 25px;
+    font-weight: 400;
   }
-  h1 { font-size: 2em; }
-  h2 { font-size: 1.5em; }
-  h3 { font-size: 1.2em; margin-top: 25px; }
-  table { 
-    border-collapse: collapse; 
-    width: 100%; /* Make table responsive */
-    margin-bottom: 25px; 
-    box-shadow: 0 2px 3px rgba(0,0,0,0.1);
+  h1 { font-size: 2.4em; font-weight: 700; border-bottom-width: 3px; }
+  h2 { font-size: 1.8em; }
+  h3 { font-size: 1.4em; border-bottom: none; color: #2e86c1; margin-top: 30px; margin-bottom: 15px;}
+  
+  /* Definition List for Summary */
+  dl.summary-list {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 5px;
+      border: 1px solid #e9ecef;
+      margin-bottom: 30px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Responsive grid */
+      gap: 15px 30px; /* Row and column gap */
   }
-  th, td { 
-    border: 1px solid #ddd; 
-    padding: 10px 12px; /* More padding */
-    text-align: left; 
+  dl.summary-list > div { /* Wrap dt/dd pairs for grid layout */
+      border-bottom: 1px dashed #e9ecef;
+      padding-bottom: 10px;
   }
-  th { 
-    background-color: #e9ecef; /* Light grey header */
-    font-weight: bold;
-    color: #495057;
+  dl.summary-list dt {
+      font-weight: 700; /* Bolder terms */
+      color: #1a5276;
+      margin-bottom: 5px;
+      font-size: 0.95em;
   }
-  tr:nth-child(even) { 
-    background-color: #f8f9fa; /* Zebra striping */
+  dl.summary-list dd {
+      margin-left: 0; /* Reset default margin */
+      font-size: 1.1em;
+      color: #566573;
   }
-  tr:hover {
-    background-color: #e2e6ea; /* Hover effect */
+
+  /* Plotly Div Styling */
+  .plotly-graph-div {
+    /* Removed specific styles, rely on wrapper */
+    max-width: 100%; /* Ensure plot div respects container */
+    height: auto; /* Allow height to adjust */
+    box-sizing: border-box; /* Include padding/border in width/height */
   }
-  .plotly-graph-div { 
-    margin-bottom: 35px; 
-    border: 1px solid #eee;
-    border-radius: 5px;
-    padding: 10px;
+  /* New Wrapper for Plots */
+  .plot-container {
+      margin: 25px auto 50px auto; /* Center and provide vertical spacing */
+      padding: 10px;
+      background-color: #fdfdfe;
+      border: 1px solid #e9ecef;
+      border-radius: 6px;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.05);
+      max-width: 98%; /* Slightly less than 100% to avoid edge issues */
+      overflow: hidden; /* Prevent plot spilling out */
   }
-  p { margin-bottom: 15px; }
+
+  p {
+      margin-bottom: 20px;
+      color: #566573;
+      font-size: 1.05em;
+  }
+  a { color: #2e86c1; text-decoration: none; font-weight: 400;}
+  a:hover { text-decoration: underline; }
 </style>
 """
 
-        with open(filepath, 'w', encoding='utf-8') as f: # Specify encoding
-            f.write(f"<!DOCTYPE html><html><head><meta charset=\\"UTF-8\\"><title>Simulation Report: {self.scenario_name}</title>")
-            f.write(css) # Inject enhanced CSS
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write("<!DOCTYPE html><html><head>")
+            f.write(f'<meta charset="UTF-8"><title>Simulation Report: {self.scenario_name}</title>')
+            f.write(css)
             f.write("</head><body>")
-            f.write("<div class=\\"container\\">") # Add container div
-            f.write(f"<h1>Simulation Report: {self.scenario_name}</h1>")
-            f.write(f"<p>Simulation Period: {self.results.index.min()} - {self.results.index.max()}</p>")
+            f.write('<div class="container">')
+            f.write(f"<h1>Digital Transformation Simulation Report</h1>")
+            f.write(f"<h2>Scenario: {self.scenario_name}</h2>")
+            f.write(f"<p>Simulation Period: <strong>{self.results.index.min()} - {self.results.index.max()}</strong></p>")
             
-            # Add Analysis Summary (e.g., final state table)
-            f.write("<h2>Final Year State Summary</h2>")
+            # Add Analysis Summary using Definition List
+            f.write("<h2>Final Year State Summary ({})</h2>".format(self.results.index[-1]))
             if not self.results.empty:
-                # Select a subset of columns for the summary table if too many exist
-                final_state_df = self.results.iloc[[-1]].copy()
-                cols_to_show = [col for col in final_state_df.columns if not col.endswith('_norm')] # Exclude normalized columns
-                f.write(final_state_df[cols_to_show[:25]].to_html(escape=False, index=False)) # Limit columns, don't escape HTML, hide index
+                final_state = self.results.iloc[-1]
+                cols_to_show = [col for col in final_state.index if not col.endswith('_norm')]
+                
+                f.write("<dl class=\"summary-list\">")
+                for col in cols_to_show[:30]: # Limit items shown
+                    metric_name = col.replace('_', ' ').title()
+                    value = final_state[col]
+                    # Basic formatting for numbers
+                    try:
+                        value_str = f"{float(value):,.3f}" if isinstance(value, (int, float)) else str(value)
+                    except (ValueError, TypeError):
+                        value_str = str(value)
+                        
+                    f.write("<div>") # Wrapper div for grid layout
+                    f.write(f"<dt>{metric_name}</dt>")
+                    f.write(f"<dd>{value_str}</dd>")
+                    f.write("</div>")
+                f.write("</dl>")
             else:
                 f.write("<p>No results data available.</p>")
 
@@ -227,9 +310,16 @@ class DigitalAnalysisEngine:
             else:
                  for name, fig in self.figures.items():
                      f.write(f"<h3>{name.replace('_', ' ').title()}</h3>")
-                     # Convert figure to HTML div
-                     html_fig = pio.to_html(fig, full_html=False, include_plotlyjs='cdn')
-                     f.write(html_fig)
+                     
+                     # Add responsive config to Plotly HTML generation
+                     html_fig = pio.to_html(
+                         fig, 
+                         full_html=False, 
+                         include_plotlyjs='cdn',
+                         config={'responsive': True} # Make Plotly chart responsive
+                     )
+                     # Wrap the plot html in our styled container
+                     f.write(f'<div class="plot-container">{html_fig}</div>') 
 
             f.write("</div>") # Close container div
             f.write("</body></html>")
